@@ -1,3 +1,8 @@
-{
-  "head":"toto"
-}
+[
+  {
+    "title": "Curry de légumes",
+    "url": "https://example.com/curry-legumes",
+    "category": "plat",
+    "vegan": true
+  }
+]
