@@ -108,7 +108,7 @@
       container.innerHTML = '<p class="muted">Chargement…</p>'
       const { data, error } = await supabase
         .from('Recettes')
-        .select('id, title, url, category, vegan, created_at')
+        .select('id, title, url, category, vegan')
         .order('title', { ascending: true })
 
       if (error) {
@@ -234,5 +234,6 @@
 </main>
 </body>
 </html>
+
 
 
