@@ -1,0 +1,229 @@
+
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recettes partagées (Supabase, sans login)</title>
+  <meta name="description" content="Liste de recettes partagée entre utilisateurs, sans authentification, avec Supabase." />
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; max-width: 780px; }
+    header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+    h1 { font-size: 1.6rem; margin: 0; }
+    form { display: grid; grid-template-columns: 1fr; gap: 0.5rem; margin: 1rem 0 2rem; }
+    input, textarea, button { padding: 0.6rem 0.8rem; font-size: 1rem; }
+    textarea { min-height: 90px; resize: vertical; }
+    button { cursor: pointer; }
+    ul { list-style: none; padding: 0; display: grid; gap: 0.75rem; }
+    li { border: 1px solid #8884; border-radius: 8px; padding: 0.75rem; display: grid; gap: 0.25rem; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .title { font-weight: 600; }
+    .muted { opacity: 0.7; font-size: 0.9rem; }
+    .danger { color: #b00020; }
+    .toolbar { display: flex; gap: 0.5rem; }
+    .error { background: #ffdddd; color: #8b0000; border: 1px solid #8b0000aa; padding: 0.5rem 0.75rem; border-radius: 6px; display:none; }
+    .ok { background: #ddffdd; color: #006400; border: 1px solid #006400aa; padding: 0.5rem 0.75rem; border-radius: 6px; display:none; }
+    .loading { opacity: 0.6; pointer-events: none; }
+    footer { margin-top: 2rem; opacity: 0.7; font-size: 0.9rem; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🍳 Recettes partagées</h1>
+    <div class="toolbar">
+      <button id="refreshBtn" title="Rafraîchir la liste">🔄 Rafraîchir</button>
+    </div>
+  </header>
+
+  <section id="alerts">
+    <div id="errorBox" class="error"></div>
+    <div id="okBox" class="ok"></div>
+  </section>
+
+  <section aria-labelledby="form-title">
+    <h2 id="form-title">Ajouter une recette</h2>
+    <form id="addForm">
+      <input id="titleInput" name="title" type="text" placeholder="Titre (ex. Crêpes)" required />
+      <textarea id="descInput" name="description" placeholder="Description / ingrédients / étapes..."></textarea>
+      <div class="toolbar">
+        <button type="submit">➕ Ajouter</button>
+        <button type="reset" title="Vider les champs">🧹 Reset</button>
+      </div>
+    </form>
+  </section>
+
+  <section aria-labelledby="list-title">
+    <h2 id="list-title">Liste des recettes</h2>
+    <ul id="recipesList" aria-live="polite">
+      <!-- Les recettes apparaîtront ici -->
+    </ul>
+  </section>
+
+  <footer>
+    <p>
+      Stocké dans Supabase. Aucune authentification nécessaire (policies <code>anon</code>).<br/>
+      Pense à configurer le bon <strong>Content-Type</strong> lors de l’upload du fichier HTML.
+    </p>
+  </footer>
+
+  <!-- Client Supabase via ESM (module) -->
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // 🔧 REMPLACE CES CONSTANTES
+    const SUPABASE_URL = 'https://yztzhfwzscskusiccpov.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_Sd0Ut3CDYKr4g8FhMKcHcg_BrRaTBfY';
+
+    // 🟢 Connexion Supabase
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // 🔔 Helpers UI
+    const $ = (sel) => document.querySelector(sel);
+    const list = $('#recipesList');
+    const errorBox = $('#errorBox');
+    const okBox = $('#okBox');
+    const addForm = $('#addForm');
+    const refreshBtn = $('#refreshBtn');
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.style.display = 'block';
+      okBox.style.display = 'none';
+    }
+    function showOk(msg) {
+      okBox.textContent = msg;
+      okBox.style.display = 'block';
+      errorBox.style.display = 'none';
+    }
+    function clearAlerts() {
+      errorBox.style.display = 'none';
+      okBox.style.display = 'none';
+    }
+
+    function formatDate(iso) {
+      try { return new Date(iso).toLocaleString(); } catch { return iso; }
+    }
+
+    // 📥 Charger les recettes
+    async function loadRecipes() {
+      clearAlerts();
+      list.classList.add('loading');
+      list.innerHTML = '<li class="muted">Chargement...</li>';
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('id, title, description, created_at')
+        .order('created_at', { ascending: false });
+
+      list.classList.remove('loading');
+
+      if (error) {
+        list.innerHTML = '';
+        showError('Erreur de chargement : ' + (error.message || JSON.stringify(error)));
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        list.innerHTML = '<li class="muted">Aucune recette pour le moment. Ajoute la première !</li>';
+        return;
+      }
+
+      list.innerHTML = '';
+      for (const r of data) {
+        const li = document.createElement('li');
+        li.dataset.id = r.id;
+
+        const top = document.createElement('div');
+        top.className = 'row';
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = r.title;
+        const toolbar = document.createElement('div');
+        toolbar.className = 'toolbar';
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'danger';
+        delBtn.textContent = '🗑️ Supprimer';
+        delBtn.addEventListener('click', () => deleteRecipe(r.id, r.title));
+
+        toolbar.appendChild(delBtn);
+        top.appendChild(title);
+        top.appendChild(toolbar);
+
+        const desc = document.createElement('div');
+        desc.textContent = r.description || '—';
+
+        const meta = document.createElement('div');
+        meta.className = 'muted';
+        meta.textContent = 'Ajouté le ' + formatDate(r.created_at);
+
+        li.appendChild(top);
+        li.appendChild(desc);
+        li.appendChild(meta);
+        list.appendChild(li);
+      }
+    }
+
+    // ➕ Ajouter
+    async function addRecipe(evt) {
+      evt.preventDefault();
+      clearAlerts();
+      const title = $('#titleInput').value.trim();
+      const description = $('#descInput').value.trim();
+
+      if (!title) {
+        showError('Le titre est requis.');
+        return;
+      }
+
+      addForm.classList.add('loading');
+      const { error } = await supabase
+        .from('recipes')
+        .insert({ title, description });
+
+      addForm.classList.remove('loading');
+
+      if (error) {
+        showError('Erreur à l’ajout : ' + (error.message || JSON.stringify(error)));
+        return;
+      }
+
+      addForm.reset();
+      showOk('Recette ajoutée ✅');
+      await loadRecipes();
+    }
+
+    // 🗑️ Supprimer
+    async function deleteRecipe(id, title = '') {
+      clearAlerts();
+      if (!confirm(`Supprimer « ${title || 'cette recette'} » ?`)) return;
+
+      const { error } = await supabase
+        .from('recipes')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        showError('Erreur à la suppression : ' + (error.message || JSON.stringify(error)));
+        return;
+      }
+      showOk('Recette supprimée ✅');
+      await loadRecipes();
+    }
+
+    // 🔄 Abonnement temps réel (optionnel — nécessite Realtime activé)
+    // Active "Database → Replication → Realtime" sur le schéma public si tu veux le live update.
+    // const channel = supabase.channel('recipes-live')
+    //   .on('postgres_changes', { event: '*', schema: 'public', table: 'recipes' }, (payload) => {
+    //     loadRecipes();
+    //   })
+    //   .subscribe();
+
+    // 🎬 Init
+    addForm.addEventListener('submit', addRecipe);
+    refreshBtn.addEventListener('click', loadRecipes);
+    loadRecipes();
+  </script>
+</body>
+</html>
