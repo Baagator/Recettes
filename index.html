@@ -107,7 +107,7 @@
       clearAlerts()
       container.innerHTML = '<p class="muted">Chargement…</p>'
       const { data, error } = await supabase
-        .from('recipes')
+        .from('recettes')
         .select('id, title, url, category, vegan, created_at')
         .order('title', { ascending: true })
 
@@ -141,7 +141,7 @@
 
       for (const r of filtered) {
         const div = document.createElement('div')
-        div.className = 'recipe'
+        div.className = 'recettes'
         div.innerHTML = `
           <h2>${escapeHtml(r.title)} ${r.vegan ? '🌿' : ''}</h2>
           <span class="category">${escapeHtml(r.category)}</span>
@@ -175,7 +175,7 @@
       if (editingId) {
         // UPDATE
         const { error } = await supabase
-          .from('recipes')
+          .from('recettes')
           .update({ title, url, category, vegan })
           .eq('id', editingId)
 
@@ -186,7 +186,7 @@
       } else {
         // INSERT
         const { error } = await supabase
-          .from('recipes')
+          .from('recettes')
           .insert({ title, url, category, vegan })
         if (error) return showError('Erreur ajout : ' + (error.message || JSON.stringify(error)))
         showOk('Recette ajoutée ✅')
@@ -213,7 +213,7 @@
     async function deleteRecipe(id, title='') {
       clearAlerts()
       if (!confirm(`Supprimer « ${title || 'cette recette'} » ?`)) return
-      const { error } = await supabase.from('recipes').delete().eq('id', id)
+      const { error } = await supabase.from('recettes').delete().eq('id', id)
       if (error) return showError('Erreur suppression : ' + (error.message || JSON.stringify(error)))
       showOk('Recette supprimée ✅')
       await loadRecipes()
@@ -234,3 +234,4 @@
 </main>
 </body>
 </html>
+
