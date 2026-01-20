@@ -1,218 +1,236 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Mes Recettes</title>
 
+<!-- (Ta police d'origine ; si elle ne charge pas, c'est normal: Proxima Nova n'est pas sur Google Fonts) -->
 <link href="https://fonts.googleapis.com/css2?family=Proxima+Nova:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
-body {
-  font-family: 'Proxima Nova', sans-serif;
-  padding:10px;
-  background:#e8f5e9;
-  margin:0;
-}
-header {
-  background:#4caf50;
-  color:white;
-  text-align:center;
-  padding:1rem;
-  font-size:1.5rem;
-  font-weight:600;
-  border-radius: 0 0 10px 10px;
-}
-main {
-  padding:1rem;
-}
-.recipe {
-  background:white;
-  padding:10px;
-  margin-bottom:10px;
-  border-radius:10px;
-  box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
-.category {
-  font-size:12px;
-  color:#388e3c;
-  text-transform:uppercase;
-  display:block;
-  margin-bottom:5px;
-  font-weight:600;
-}
-form input, form select, form button {
-  width:100%;
-  padding:10px;
-  margin-bottom:10px;
-  border-radius:5px;
-  border:1px solid #c8e6c9;
-  box-sizing:border-box;
-}
-form button {
-  background:#66bb6a;
-  color:white;
-  border:none;
-  cursor:pointer;
-  font-weight:600;
-}
-form button:hover {
-  background:#388e3c;
-}
-button {
-  cursor:pointer;
-  margin-right:5px;
-  border-radius:5px;
-  padding:5px 10px;
-  font-weight:600;
-  border:none;
-}
-button.edit {
-  background:#a5d6a7;
-  color:#1b5e20;
-}
-button.delete {
-  background:#c8e6c9;
-  color:#2e7d32;
-}
-.filter-group {
-  margin-bottom:10px;
-}
+  body { font-family:'Proxima Nova',system-ui,-apple-system,Segoe UI,Roboto,sans-serif; padding:10px; background:#e8f5e9; margin:0; }
+  header { background:#4caf50; color:white; text-align:center; padding:1rem; font-size:1.5rem; font-weight:600; border-radius:0 0 10px 10px; }
+  main { padding:1rem; }
+  .recipe { background:white; padding:10px; margin-bottom:10px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+  .category { font-size:12px; color:#388e3c; text-transform:uppercase; display:block; margin-bottom:5px; font-weight:600; }
+  form input, form select, form button { width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:1px solid #c8e6c9; box-sizing:border-box; }
+  form button { background:#66bb6a; color:white; border:none; cursor:pointer; font-weight:600; }
+  form button:hover { background:#388e3c; }
+  button { cursor:pointer; margin-right:5px; border-radius:5px; padding:5px 10px; font-weight:600; border:none; }
+  button.edit { background:#a5d6a7; color:#1b5e20; }
+  button.delete { background:#c8e6c9; color:#2e7d32; }
+  .filter-group { margin-bottom:10px; }
+  .muted { opacity:.7; font-size:.95rem; }
+  .bar { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+  .error { background:#ffdddd; color:#8b0000; border:1px solid #8b000088; padding:.5rem .75rem; border-radius:6px; display:none; }
+  .ok { background:#ddffdd; color:#006400; border:1px solid #00640088; padding:.5rem .75rem; border-radius:6px; display:none; }
 </style>
 </head>
 
 <body>
-
 <header>Mes Recettes 🌿</header>
 <main>
 
-<form id="recipeForm">
-  <input type="text" id="title" placeholder="Nom de la recette" required />
-  <input type="url" id="url" placeholder="Lien de la recette" required />
-  <select id="category" required>
-    <option value="">Choisir une catégorie</option>
-    <option value="entree">Entrée</option>
-    <option value="plat">Plat</option>
-    <option value="dessert">Dessert</option>
-  </select>
+  <!-- Messages -->
+  <div class="bar">
+    <button id="refreshBtn">🔄 Rafraîchir</button>
+    <span id="count" class="muted"></span>
+  </div>
+  <div id="errorBox" class="error"></div>
+  <div id="okBox" class="ok"></div>
 
-  <label style="display:block; margin-bottom:10px;">
-    <input type="checkbox" id="vegan" /> 🌿 Végétale
-  </label>
+  <!-- Formulaire -->
+  <form id="recipeForm">
+    <input type="text" id="title" placeholder="Nom de la recette" required />
+    <input type="url" id="url" placeholder="Lien de la recette" required />
+    <select id="category" required>
+      <option value="">Choisir une catégorie</option>
+      <option value="entree">Entrée</option>
+      <option value="plat">Plat</option>
+      <option value="dessert">Dessert</option>
+    </select>
+    <label style="display:block; margin-bottom:10px;">
+      <input type="checkbox" id="vegan" /> 🌿 Végétale
+    </label>
+    <button type="submit">Ajouter la recette</button>
+  </form>
 
-  <button type="submit">Ajouter la recette</button>
-</form>
+  <!-- Filtres -->
+  <div class="filter-group">
+    <label>Filtrer par catégorie :</label>
+    <select id="filterCategory">
+      <option value="all">Toutes</option>
+      <option value="entree">Entrée</option>
+      <option value="plat">Plat</option>
+      <option value="dessert">Dessert</option>
+    </select>
+    <label style="display:block; margin-top:5px;">
+      <input type="checkbox" id="filterVegan" /> Afficher seulement 🌿 Végétales
+    </label>
+  </div>
 
-<div class="filter-group">
-  <label>Filtrer par catégorie :</label>
-  <select id="filterCategory">
-    <option value="all">Toutes</option>
-    <option value="entree">Entrée</option>
-    <option value="plat">Plat</option>
-    <option value="dessert">Dessert</option>
-  </select>
+  <!-- Liste -->
+  <div id="recipesContainer"></div>
 
-  <label style="display:block; margin-top:5px;">
-    <input type="checkbox" id="filterVegan" /> Afficher seulement 🌿 Végétales
-  </label>
-</div>
+  <!-- Script -->
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-<div id="recipesContainer"></div>
+    // 🔧 REMPLACER CES CONSTANTES
+    const SUPABASE_URL = 'https://yztzhfwzscskusiccpov.supabase.co'
+    const SUPABASE_ANON_KEY = 'sb_publishable_Sd0Ut3CDYKr4g8FhMKcHcg_BrRaTBfY'
 
-<script>
-const container = document.getElementById('recipesContainer');
-const form = document.getElementById('recipeForm');
-const filterSelect = document.getElementById('filterCategory');
-const filterVeganCheckbox = document.getElementById('filterVegan');
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-// Chargement depuis localStorage uniquement
-let recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+    // UI refs
+    const container = document.getElementById('recipesContainer')
+    const form = document.getElementById('recipeForm')
+    const filterSelect = document.getElementById('filterCategory')
+    const filterVeganCheckbox = document.getElementById('filterVegan')
+    const refreshBtn = document.getElementById('refreshBtn')
+    const count = document.getElementById('count')
+    const errorBox = document.getElementById('errorBox')
+    const okBox = document.getElementById('okBox')
 
-// Afficher les recettes
-function renderRecipes() {
-  recipes.sort((a,b) => a.title.localeCompare(b.title));
+    let recipes = []       // cache local depuis la DB
+    let editingId = null   // si non null -> on est en mode édition
 
-  const selectedCategory = filterSelect.value;
-  const onlyVegan = filterVeganCheckbox.checked;
+    // Helpers
+    const showError = (msg) => { errorBox.textContent = msg; errorBox.style.display='block'; okBox.style.display='none' }
+    const showOk = (msg) => { okBox.textContent = msg; okBox.style.display='block'; errorBox.style.display='none' }
+    const clearAlerts = () => { errorBox.style.display='none'; okBox.style.display='none' }
 
-  container.innerHTML = '';
+    // Charger depuis Supabase
+    async function loadRecipes() {
+      clearAlerts()
+      container.innerHTML = '<p class="muted">Chargement…</p>'
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('id, title, url, category, vegan, created_at')
+        .order('title', { ascending: true })
 
-  recipes.forEach((r, index) => {
-    if(selectedCategory !== 'all' && r.category !== selectedCategory) return;
-    if(onlyVegan && !r.vegan) return;
+      if (error) {
+        container.innerHTML = ''
+        showError('Erreur de chargement : ' + (error.message || JSON.stringify(error)))
+        return
+      }
+      recipes = data || []
+      renderRecipes()
+    }
 
-    const div = document.createElement('div');
-    div.className = 'recipe';
-    div.innerHTML = `
-      <h2>${r.title} ${r.vegan ? '🌿' : ''}</h2>
-      <span class="category">${r.category}</span>
-      <a href="${r.url}" target="_blank">Voir la recette</a>
-      <div style="margin-top:5px;">
-        <button class="edit" onclick="editRecipe(${index})">Modifier</button>
-        <button class="delete" onclick="deleteRecipe(${index})">Supprimer</button>
-      </div>
-    `;
-    container.appendChild(div);
-  });
-}
+    // Rendu local (avec filtres)
+    function renderRecipes() {
+      const selectedCategory = filterSelect.value
+      const onlyVegan = filterVeganCheckbox.checked
 
-// Supprimer
-function deleteRecipe(index) {
-  if(confirm("Supprimer cette recette ?")) {
-    recipes.splice(index, 1);
-    localStorage.setItem('recipes', JSON.stringify(recipes));
-    renderRecipes();
-  }
-}
+      const filtered = recipes.filter(r => {
+        if (selectedCategory !== 'all' && r.category !== selectedCategory) return false
+        if (onlyVegan && !r.vegan) return false
+        return true
+      })
 
-// Modifier
-function editRecipe(index) {
-  const r = recipes[index];
-  title.value = r.title;
-  url.value = r.url;
-  category.value = r.category;
-  vegan.checked = r.vegan;
+      count.textContent = filtered.length ? `${filtered.length} recette(s)` : 'Aucune recette'
+      container.innerHTML = ''
 
-  form.querySelector('button').textContent = 'Mettre à jour';
+      if (!filtered.length) {
+        container.innerHTML = '<p class="muted">Aucune recette ne correspond au filtre.</p>'
+        return
+      }
 
-  form.onsubmit = e => {
-    e.preventDefault();
-    r.title = title.value;
-    r.url = url.value;
-    r.category = category.value;
-    r.vegan = vegan.checked;
+      for (const r of filtered) {
+        const div = document.createElement('div')
+        div.className = 'recipe'
+        div.innerHTML = `
+          <h2>${escapeHtml(r.title)} ${r.vegan ? '🌿' : ''}</h2>
+          <span class="category">${escapeHtml(r.category)}</span>
+          <a href="${escapeAttr(r.url)}" target="_blank" rel="noopener noreferrer">Voir la recette</a>
+          <div style="margin-top:5px;">
+            <button class="edit" data-id="${r.id}">Modifier</button>
+            <button class="delete" data-id="${r.id}">Supprimer</button>
+          </div>
+        `
+        div.querySelector('.edit').addEventListener('click', () => editRecipe(r.id))
+        div.querySelector('.delete').addEventListener('click', () => deleteRecipe(r.id, r.title))
+        container.appendChild(div)
+      }
+    }
 
-    localStorage.setItem('recipes', JSON.stringify(recipes));
-    renderRecipes();
-    form.reset();
-    form.querySelector('button').textContent = 'Ajouter la recette';
-    setupAddRecipeListener();
-  };
-}
+    // Ajouter ou mettre à jour selon l'état
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      clearAlerts()
 
-// Ajouter
-function setupAddRecipeListener() {
-  form.onsubmit = e => {
-    e.preventDefault();
-    recipes.push({
-      title: title.value,
-      url: url.value,
-      category: category.value,
-      vegan: vegan.checked
-    });
-    localStorage.setItem('recipes', JSON.stringify(recipes));
-    renderRecipes();
-    form.reset();
-  };
-}
+      const title = document.getElementById('title').value.trim()
+      const url = document.getElementById('url').value.trim()
+      const category = document.getElementById('category').value
+      const vegan = document.getElementById('vegan').checked
 
-filterSelect.addEventListener('change', renderRecipes);
-filterVeganCheckbox.addEventListener('change', renderRecipes);
+      if (!title || !url || !category) {
+        showError('Veuillez remplir tous les champs obligatoires.')
+        return
+      }
 
-setupAddRecipeListener();
-renderRecipes();
-</script>
+      if (editingId) {
+        // UPDATE
+        const { error } = await supabase
+          .from('recipes')
+          .update({ title, url, category, vegan })
+          .eq('id', editingId)
 
+        if (error) return showError('Erreur mise à jour : ' + (error.message || JSON.stringify(error)))
+        showOk('Recette mise à jour ✅')
+        editingId = null
+        form.querySelector('button[type="submit"]').textContent = 'Ajouter la recette'
+      } else {
+        // INSERT
+        const { error } = await supabase
+          .from('recipes')
+          .insert({ title, url, category, vegan })
+        if (error) return showError('Erreur ajout : ' + (error.message || JSON.stringify(error)))
+        showOk('Recette ajoutée ✅')
+      }
+
+      form.reset()
+      await loadRecipes()
+    })
+
+    // Pré-remplir le formulaire pour édition
+    function editRecipe(id) {
+      const r = recipes.find(x => x.id === id)
+      if (!r) return
+      document.getElementById('title').value = r.title
+      document.getElementById('url').value = r.url
+      document.getElementById('category').value = r.category
+      document.getElementById('vegan').checked = !!r.vegan
+      editingId = id
+      form.querySelector('button[type="submit"]').textContent = 'Mettre à jour'
+      clearAlerts()
+    }
+
+    // Supprimer
+    async function deleteRecipe(id, title='') {
+      clearAlerts()
+      if (!confirm(`Supprimer « ${title || 'cette recette'} » ?`)) return
+      const { error } = await supabase.from('recipes').delete().eq('id', id)
+      if (error) return showError('Erreur suppression : ' + (error.message || JSON.stringify(error)))
+      showOk('Recette supprimée ✅')
+      await loadRecipes()
+    }
+
+    // Filtres & refresh
+    filterSelect.addEventListener('change', renderRecipes)
+    filterVeganCheckbox.addEventListener('change', renderRecipes)
+    document.getElementById('refreshBtn').addEventListener('click', loadRecipes)
+
+    // Sécurité minimale : échapper ce qui vient de la DB (XSS)
+    function escapeHtml(s='') { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+    function escapeAttr(s='') { return escapeHtml(s).replace(/"/g, '&quot;') }
+
+    // Premier chargement
+    loadRecipes()
+  </script>
 </main>
 </body>
 </html>
