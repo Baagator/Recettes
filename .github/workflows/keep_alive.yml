@@ -19,7 +19,7 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}" \
             -H "Content-Type: application/json" \
             -H "Prefer: return=representation" \
-            --data '{"title":"test_github_actions", "category":"plat", "vegan":"FALSE"}'
+            --data '{"title":"test_github_actions", "category":"plat", "vegan":"FALSE"}')
 
           echo "API RESPONSE: $RESPONSE"
 
