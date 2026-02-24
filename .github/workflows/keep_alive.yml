@@ -7,11 +7,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  ping:
+  test-insert-delete:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Ping Supabase Database
+      - name: Insert a test row into Supabase
+        id: insert
         run: |
-          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/Recettes?select=id&limit=1" \
-          -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}"
+          RESPONSE=$(curl -s -X POST "${{ secrets.SUPABASE_URL }}/rest/v1/Recettes" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            --data '{"nom":"test_github_actions"}')
+
+          echo "API RESPONSE: $RESPONSE"
+
+          # Extraction de l'id depuis le JSON retourné
+          ID=$(echo "$RESPONSE" | jq -r '.[0].id')
+
+          echo "INSERTED_ID=$ID" >> $GITHUB_OUTPUT
+
+      - name: Delete the previously created row
+        run: |
+          curl -X DELETE "${{ secrets.SUPABASE_URL }}/rest/v1/Recettes?id=eq.${{ steps.insert.outputs.INSERTED_ID }}" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}"
