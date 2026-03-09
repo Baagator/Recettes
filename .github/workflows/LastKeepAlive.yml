@@ -1,0 +1,27 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Run at midnight (0 0 * *) on Sunday (0) and Friday(5)
+    - cron: '0 0 * * 3'
+  workflow_dispatch:
+
+jobs:
+  test-insert-delete:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Update URL for Cinnamon rolls
+        run: |
+          curl -X PATCH "${{ secrets.SUPABASE_URL }}/rest/v1/Recettes?title=eq.Cinnamon%20rolls" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            --data '{ "url": "https://recettepierre" }'
+
+      - name: Verify update
+        run: |
+          curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/Recettes?title=eq.Cinnamon%20rolls&select=title,url" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}"
