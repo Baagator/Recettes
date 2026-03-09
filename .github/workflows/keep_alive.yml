@@ -3,7 +3,7 @@ name: Keep Supabase Alive
 on:
   schedule:
     # Run at midnight (0 0 * *) on Sunday (0) and Friday(5)
-    - cron: '0 0 * * 0,5'
+    - cron: '0 0 * * 0'
   workflow_dispatch:
 
 jobs:
@@ -11,25 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Insert a test row into Supabase
-        id: insert
+      - name: Update URL for Cinnamon rolls
         run: |
-          RESPONSE=$(curl -s -X POST "${{ secrets.SUPABASE_URL }}/rest/v1/Recettes" \
+          curl -X PATCH "${{ secrets.SUPABASE_URL }}/rest/v1/Recettes?title=eq.Cinnamon%20rolls" \
             -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}" \
             -H "Content-Type: application/json" \
             -H "Prefer: return=representation" \
-            --data '{"title":"test_github_actions", "category":"plat", "vegan":"FALSE"}')
+            --data '{ "url": "https://recettedepierre" }'
 
-          echo "API RESPONSE: $RESPONSE"
-
-          # Extraction de l'id depuis le JSON retourné
-          ID=$(echo "$RESPONSE" | jq -r '.[0].id')
-
-          echo "INSERTED_ID=$ID" >> $GITHUB_OUTPUT
-
-      - name: Delete the previously created row
+      - name: Verify update
         run: |
-          curl -X DELETE "${{ secrets.SUPABASE_URL }}/rest/v1/Recettes?id=eq.${{ steps.insert.outputs.INSERTED_ID }}" \
+          curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/Recettes?title=eq.Cinnamon%20rolls&select=title,url" \
             -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}"
