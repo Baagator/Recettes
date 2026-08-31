@@ -51,7 +51,7 @@ function renderRecipes(){container.innerHTML='';for(const r of window.recipes){c
 window.closeRecipeModal=()=>document.getElementById('recipeModal').style.display='none';
 function markdownToHtml(md=''){return md.replace(/^### (.*)$/gim,'<h3>$1</h3>').replace(/^## (.*)$/gim,'<h2>$1</h2>').replace(/^# (.*)$/gim,'<h1>$1</h1>').replace(/^- (.*)$/gim,'<li>$1</li>').replace(/
 /g,'<br>');}
-window.showRecipe=function(id){const r=window.recipes.find(x=>x.id===id);if(!r)return;if(r.markdown_content&&r.markdown_content.trim()){document.getElementById('recipeContent').innerHTML=markdownToHtml(r.markdown_content);document.getElementById('recipeModal').style.display='block';return;}if(r.url)window.open(r.url,'_blank','noopener,noreferrer');};
+window.showRecipe=function(id){const r=window.recipes.find(x=>x.id===id);console.log(r);if(!r)return;if(r.markdown_content&&r.markdown_content.trim()){document.getElementById('recipeContent').innerHTML=markdownToHtml(r.markdown_content);document.getElementById('recipeModal').style.display='block';return;}if(r.url)window.open(r.url,'_blank','noopener,noreferrer');};
 form.addEventListener('submit',async e=>{e.preventDefault();const title=title.value?.trim();const url=document.getElementById('url').value.trim();const markdown_content=document.getElementById('markdown_content').value.trim();const category=document.getElementById('category').value;const vegan=document.getElementById('vegan').checked;if(!url&&!markdown_content)return;const data={title,url,markdown_content,category,vegan};if(editingId) await supabase.from('Recettes').update(data).eq('id',editingId); else await supabase.from('Recettes').insert(data);loadRecipes();});
 loadRecipes();
 </script></main></body></html>
